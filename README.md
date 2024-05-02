@@ -11,3 +11,6 @@ pip install -r requirements.txt
 ```bash
 python example.py
 ```
+
+## Get Env Variable Values
+Please ask LiveHint AI managers for values
