@@ -14,3 +14,4 @@ python example.py
 
 ## Get Env Variable Values
 Please ask LiveHint AI managers for values
+Husni Almoubayyed: halmoubayyed@carnegielearning.com

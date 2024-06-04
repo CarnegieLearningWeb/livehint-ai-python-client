@@ -26,6 +26,12 @@ API_BASE_URL = os.getenv("API_BASE_URL")
 API_BEARER_TOKEN = os.getenv("API_BEARER_TOKEN")
 API_TIMEOUT= 3
 API_TUTORBOT_TYPE = "solver_bot"
+API_VALID_APP_CONTEXTS = ["mathbook_tx", "mathstream"]
+API_DEFAULT_APP_CONTEXT = "mathbook_tx"
+API_SUPPORTED_MODELS = ["gpt-4o", "gpt-4-0125-preview", "gpt-4-1106-preview", "gpt-4-0613", "claude-3-opus-20240229", "claude-3-sonnet-20240229", "claude-3-haiku-20240307"]
+API_DEFAULT_MODEL = "gpt-4-0613"
+API_DEFAULT_TEMPERATURE = 0.3
+API_DEFAULT_STREAM = True
 
 if API_BASE_URL is None:
     raise ValueError("API_BASE_URL is not defined")
@@ -34,33 +40,17 @@ if API_BEARER_TOKEN is None:
     raise ValueError("API_BEARER_TOKEN is not defined")
 
 
-def get_problem_info(course, module, page, question):
+def get_problem_info(app_context, course, module, page, question, item_id):
     params = {
+        "app_context": app_context,
         "qr_course": course,
         "qr_module": module,
         "qr_page": page,
-        "qr_question": question
+        "qr_question": question,
+        "item_id": item_id
     }
     headers = {"Authorization": f"Bearer {API_BEARER_TOKEN}"}
     url = f"{API_BASE_URL}/api/problem-info"
-
-    # # Encode the parameters using urllib.parse.quote()
-    # qr_course_encoded = quote(course)
-    # qr_module_encoded = quote(module)
-    # qr_page_encoded = quote(page)
-    # qr_question_encoded = quote(question)
-
-    # # put all params in URL
-    # # can also define a params dictionary and do requests.get(url, headers=headers, params=params), this way no need to worry about encoding
-    # url = (
-    #     f"{API_BASE_URL}/api/problem-info?"
-    #     f"qr_course={qr_course_encoded}&"
-    #     f"qr_module={qr_module_encoded}&"
-    #     f"qr_page={qr_page_encoded}&"
-    #     f"qr_question={qr_question_encoded}"
-    # )
-
-    # headers = {"Authorization": f"Bearer {API_BEARER_TOKEN}"}
 
     # Make problem-info GET request to LiveHint AI
     try:
@@ -89,8 +79,9 @@ def get_problem_info(course, module, page, question):
     return problem_id, tutorbot
 
 
-def create_session(problem_id, tutorbot):
+def create_session(app_context, problem_id, tutorbot):
     request_data = {
+        "app_context": app_context,
         "problem_id": problem_id,
         "tutorbot": tutorbot
     }
@@ -123,10 +114,11 @@ def create_session(problem_id, tutorbot):
     return session_id
 
 
-def update_session(session_id):
+def update_session(session_id, model, temperature):
     request_data = {
-        "model": "gpt-4-0613",
+        "model": model,
         "stream": False,
+        "temperature": temperature,
         "tutorbot_type": API_TUTORBOT_TYPE
     }
     headers = {"Authorization": f"Bearer {API_BEARER_TOKEN}"}
@@ -175,14 +167,14 @@ def parse_stream_response(stream_content):
     return result
 
 # called at the beginning; called once for each chat
-def init(course, module, page, question):
-    problem_id, tutorbot = get_problem_info(course, module, page, question)
-    session_id = create_session(problem_id, tutorbot)
-    update_session(session_id)
+def init(app_context, course=None, module=None, page=None, question=None, item_id=None, model=API_DEFAULT_MODEL, temperature=API_DEFAULT_TEMPERATURE):
+    problem_id, tutorbot = get_problem_info(app_context, course, module, page, question, item_id)
+    session_id = create_session(app_context, problem_id, tutorbot)
+    update_session(session_id, model, temperature)
     return session_id
 
 # called after session is updated; called once for each chat
-def start_chat(session_id:str, stream:bool) -> list:
+def start_chat(session_id:str, stream=API_DEFAULT_STREAM) -> list:
     stream_str = "true" if stream else "false"
     params = {
         "system_prompt_num": "9",
