@@ -1,24 +1,21 @@
-import requests
-import livehint_ai_client as lh_ai_client
+from livehint_ai_client import init, start_chat, get_chat_response, API_DEFAULT_APP_CONTEXT, API_DEFAULT_MODEL, API_DEFAULT_TEMPERATURE, API_DEFAULT_STREAM
 
 def main():
-    try:
-        course = "Algebra I"
-        module = "M1"
-        page = "101"
-        question = "1"
-        session_id = lh_ai_client.init(course, module, page, question)
-        print("Session ID:", session_id)
-    except requests.exceptions.Timeout:
-        print("The request timed out. Please try again later.")
-    except requests.exceptions.HTTPError as e:
-        print(f"HTTP error ({e.response.status_code}): {e.response.reason}")
-    except requests.exceptions.ConnectionError:
-        print("Connection error. Please check your network connection.")
-    except requests.exceptions.RequestException as e:
-        print(f"An error occurred during the request: {str(e)}")
-    except Exception as e:
-        print(f"An unexpected error occurred: {str(e)}")
+    course = "Algebra I"
+    module = "M1"
+    page = "101"
+    question = "1"
+    stream = API_DEFAULT_STREAM
+    app_context = API_DEFAULT_APP_CONTEXT
+    temperature = API_DEFAULT_TEMPERATURE
+    model = API_DEFAULT_MODEL
+    session_id = init(app_context, course, module, page, question, temperature, model)
+    print("Session ID:", session_id)
+    response1 = start_chat(session_id, stream)
+    print("start_chat last response:", response1[-1])
+    message = "sorry I don't quite understand the problem"
+    response2 = get_chat_response(session_id, message)
+    print("get_chat_response response:", response2)
 
 if __name__ == "__main__":
     main()
